@@ -13,14 +13,14 @@ func init() {
 	//log.SetOutput(os.Stdout)
 	flag.Set("alsologtostderr", "true")
 	flag.Set("log_dir", "./tmp")
-	flag.Set("v","1")
+	flag.Set("v", "1")
 
 }
 
 func main() {
 	ip := flag.String("ip", "127.0.0.1", "kafka ip")
 	port := flag.String("port", "32400", "kafka port")
-	topic := flag.String("topic", "index-vehicle2", "kafka topic")
+	topic := flag.String("topic", "index-vehicle", "kafka topic")
 	flag.Parse()
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": *ip + ":" + *port,
@@ -43,15 +43,14 @@ func main() {
 		msg, err := c.ReadMessage(-1)
 		//glog.Info("get kafka information...")
 		if err == nil {
+			c.Poll(100)
 			//fmt.Printf("Message on %s:%s \n", msg.TopicPartition, msg.Value)
 			proto.Unmarshal(msg.Value, genericObj)
 			if genericObj.ObjType == go_kafka.ObjType_OBJ_TYPE_CAR {
 				proto.Unmarshal(genericObj.GetBinData(), vehicleobj)
 				//glog.V(1).Infoln("Big_img-->"+vehicleobj.Img.GetURI())
-				a:=vehicleobj.Vehicle
-				if len(a)>1 {
-					glog.V(3).Infoln(vehicleobj.Vehicle)
-				}
+				//a:=vehicleobj.Vehicle
+				glog.V(3).Infoln(vehicleobj.Vehicle)
 				//glog.V(1).Info(vehicleobj.Vehicle[0].GetImg().GetImg().GetURI())
 				//v_tmp := vehicleobj.Vehicle
 				//proto.Unmarshal(recVehicle.Img,v_tmp)
