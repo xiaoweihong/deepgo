@@ -6,7 +6,7 @@ pipeline {
         stage('UnitTest') {
             steps {
                 script {
-                    if( sh(script: 'docker run --rm -v $(pwd):/go/src/gowebdemo -w /go/src/gowebdemo golang:1.11.0 /bin/bash -c "/go/src/gowebdemo/rununittest.sh"', returnStatus: true ) != 0 ){
+                    if( sh(script: 'docker run --rm -v $(pwd):/go/src/deepgo -w /go/src/deepgo golang:1.11.0 /bin/bash -c "/go/src/deepgo/rununittest.sh"', returnStatus: true ) != 0 ){
                        currentBuild.result = 'FAILURE'
                     }
                 }
