@@ -6,7 +6,7 @@ pipeline {
         stage('UnitTest') {
             steps {
                 script {
-                    if( sh(script: 'docker run --rm -v $(pwd):/var/jenkins_home/workspace -w /var/jenkins_home/workspace golang:1.11.0 /bin/bash -c "/var/jenkins_home/workspace/rununittest.sh"', returnStatus: true ) != 0 ){
+                    if( sh(script: 'docker run --rm -v $(pwd):/var/jenkins_home/workspace -w /var/jenkins_home/workspace/test_go golang:1.11.0 /bin/bash -c "/var/jenkins_home/workspace/test_go/rununittest.sh"', returnStatus: true ) != 0 ){
                        currentBuild.result = 'FAILURE'
                     }
                 }
