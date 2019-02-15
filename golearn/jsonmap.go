@@ -19,5 +19,5 @@ func main() {
 	fmt.Println(s)
 	json.Unmarshal(s, &map2)
 
-	fmt.Println(map2["mongo"].(map[string]interface{})["av"])
+	fmt.Println(map2["mongo"].(map[string]interface{})["a"])
 }

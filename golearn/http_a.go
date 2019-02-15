@@ -22,7 +22,7 @@ func main() {
 	fmt.Printf("%s", a)
 	//b,err:=ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-	//fmt.Println(resp.Status)
+
 	if err != nil {
 
 	}

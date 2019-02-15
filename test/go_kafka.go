@@ -2,9 +2,11 @@ package main
 
 import (
 	"deepgo/go_kafka"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gogo/protobuf/jsonpb"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 )
@@ -48,9 +50,14 @@ func main() {
 			proto.Unmarshal(msg.Value, genericObj)
 			if genericObj.ObjType == go_kafka.ObjType_OBJ_TYPE_CAR {
 				proto.Unmarshal(genericObj.GetBinData(), vehicleobj)
-				//glog.V(1).Infoln("Big_img-->"+vehicleobj.Img.GetURI())
-				//a:=vehicleobj.Vehicle
-				glog.V(3).Infoln(vehicleobj.Vehicle)
+				data, _ := json.Marshal(vehicleobj)
+				jsonpb.UnmarshalString(string(data), vehicleobj)
+
+				//json.Unmarshal(data,vehicleobj)
+				//glog.Infoln(string(data))
+
+				fmt.Println(vehicleobj.String())
+				//glog.V(3).Infoln()vehicleobj.Vehicle)
 				//glog.V(1).Info(vehicleobj.Vehicle[0].GetImg().GetImg().GetURI())
 				//v_tmp := vehicleobj.Vehicle
 				//proto.Unmarshal(recVehicle.Img,v_tmp)
