@@ -161,17 +161,6 @@ func main() {
 		getRepoInfo()
 	}
 
-	//add_sys_sensor("root")
-	//getRepoList()
-	//get_task_list()
-	//getSourceIdList()
-	//add_vehicle_task(getSourceIdList())
-	//get_task_list()
-	//del_all_task()
-	//add_kse_task(getSourceIdList())
-	//add_vehicle_task(getSourceByUniqueRepoId("486d83ce-9934-4998-b5ff-29fb5b37e5cb"))
-	//getSourceByUniqueRepoId("486d83ce-9934-4998-b5ff-29fb5b37e5cb")
-
 }
 
 func getRepoInfo() {
@@ -340,7 +329,7 @@ func add_face_task(sourceList []string) {
 		taskParam := Task{
 			UniqueSourceId: v,
 			TypeId:         3,
-			DetectTypeIds:  []int{2011, 2012, 2013, 2015},
+			DetectTypeIds:  []int{1011},
 		}
 		sensors := append(s, taskParam)
 		bytes, err := json.Marshal(sensors)
