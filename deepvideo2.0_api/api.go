@@ -105,12 +105,26 @@ type TreeData struct {
 	Repos        []Repo
 	Sensors      []Sensor
 }
+type SearchResult struct {
+	AllSize    int64
+	AllTaskIds []string
+}
+
+type SourceResult struct {
+	Resp
+	Data []Source
+}
+
+type TaskSearch struct {
+	Resp
+	Data SearchResult
+}
 
 var (
-	ip      = flag.String("ip", "192.168.2.22", "deepvideo ip")
+	ip      = flag.String("ip", "127.0.0.1", "deepvideo ip")
 	port    = flag.Int("port", 8899, "deepvideo port")
 	file    = flag.String("file", "rtsp.txt", "file path about rtsp list")
-	command = flag.String("c", "", "command about api.(get_task_list del_all_task add_vehicle_task add_face_task add_kse_task)")
+	command = flag.String("c", "", "command about api.(getSourceList,add_sys_sensor,get_task_list del_all_task add_vehicle_task add_face_task add_kse_task)")
 	repoId  = flag.String("repoId", "", "add task need repoId")
 )
 
@@ -157,6 +171,13 @@ func main() {
 			printUsageErrorAndExit("no -repoId specified.add task need repoId,should not empty")
 		}
 		add_sys_sensor(*repoId)
+	case "getTaskByType":
+		getTaskByType("vehicle")
+	case "getSourceList":
+		if *repoId == "" {
+			printUsageErrorAndExit("no -repoId specified.add task need repoId,should not empty")
+		}
+		getSourceList(*repoId)
 	default:
 		getRepoInfo()
 	}
@@ -185,6 +206,23 @@ func getRepoInfo() {
 		fmt.Printf("repoId:%s-----sensorCount:%d-----repoName:%s\n", repo.UniqueRepoId, repo.SensorCount, repo.Name)
 	}
 	fmt.Println(strings.Repeat("******", 10))
+}
+
+func getSourceList(uniqueRepoId string) {
+	url := fmt.Sprintf("http://%s:%d/api/biz/repos/tree?WithSensor=true&WithSource=true&LimitLevel=1&UniqueRepoId=%s&SourceTypes=3&WithTypeReg=&timestamp=1550197932129", *ip, *port, uniqueRepoId)
+
+	result, err := httpDo(url, "GET", []byte(""))
+	if err != nil {
+
+	}
+	var sourceTreeData SourceTreeData
+
+	json.Unmarshal([]byte(result), &sourceTreeData)
+	sensorList := sourceTreeData.Data.Sensors
+	for _, source := range sensorList {
+		fmt.Println(source.SensorName, "\t", source.Url, "\t", source.Latitude, "\t", source.Longitude)
+	}
+
 }
 
 func getSourceByUniqueRepoId(uniqueRepoId string) (sourceIdList []string) {
@@ -251,23 +289,46 @@ func getSensorsByUniqueRepoId(uniqueRepoId string) (uniqueSendorList []string) {
 
 }
 
+func getTaskByType(task_type string) {
+
+	var tmp int64
+	if task_type == "face" {
+		tmp = 1011
+	} else if task_type == "vehicle" {
+		tmp = 2011
+	} else {
+		fmt.Println("type err")
+		os.Exit(400)
+	}
+
+	url := fmt.Sprintf("http://%s:%d/api/tasks?detectTypeId=%d", *ip, *port, tmp)
+	result, err := httpDo(url, "GET", []byte(""))
+	if err != nil {
+
+	}
+	var taskSearch TaskSearch
+	json.Unmarshal([]byte(result), &taskSearch)
+	//fmt.Println(taskSearch)
+
+}
+
 //todo 待完善source信息
-//func getSourceIdList() (sourceList []string) {
-//	url := fmt.Sprintf("http://%s:%d/api/source", *ip, *port)
-//	resp, err := http.Get(url)
-//	if err != nil {
-//
-//	}
-//	defer resp.Body.Close()
-//	res, err := ioutil.ReadAll(resp.Body)
-//	var source Source
-//	json.Unmarshal(res, &source)
-//	for _,v:=range source.Data{
-//		sourceList = append(sourceList, v.SourceId)
-//	}
-//	fmt.Println(len(sourceList))
-//	return
-//}
+func getSourceIdList() (sourceList []string) {
+	url := fmt.Sprintf("http://%s:%d/api/source", *ip, *port)
+	resp, err := http.Get(url)
+	if err != nil {
+
+	}
+	defer resp.Body.Close()
+	res, err := ioutil.ReadAll(resp.Body)
+	var sourceResult SourceResult
+	json.Unmarshal(res, &sourceResult)
+	for _, v := range sourceResult.Data {
+		sourceList = append(sourceList, v.SourceId)
+	}
+	fmt.Println(len(sourceList))
+	return
+}
 
 func get_task_list() (uniqueTaskIdList []string, err error) {
 	url := fmt.Sprintf("http://%s:%d/api/task", *ip, *port)
@@ -384,7 +445,7 @@ func del_all_task() {
 }
 
 func import_file(stream_file string) (res []string, err error) {
-	if contentBytes, err := ioutil.ReadFile("rtsp.txt"); err == nil {
+	if contentBytes, err := ioutil.ReadFile(stream_file); err == nil {
 		result := strings.Replace(string(contentBytes), "\n", "\n", 1)
 
 		splitResult := strings.Split(result, "\n")
@@ -396,13 +457,17 @@ func import_file(stream_file string) (res []string, err error) {
 
 func add_sys_sensor(repoId string) {
 	url := fmt.Sprintf("http://%s:%d/api/biz/sensors", *ip, *port)
+	fmt.Println(url)
 	url_list, _ := import_file(*file)
 	for _, sensor := range url_list {
-		tmp := strings.Split(sensor, " ")
+		//tmp := strings.Split(sensor, " ")
+		tmp := strings.Fields(sensor)
+		//fmt.Println(tmp)
 		//linux上有问题，mac上没有，多个[]
-		if len(tmp) == 1 {
+		if len(tmp) == 0 {
 			continue
 		}
+		//fmt.Println("tmp----->>>>>",len(tmp))
 		latitude, _ := strconv.ParseFloat(tmp[2], 32)
 		longitude, _ := strconv.ParseFloat(tmp[3], 32)
 		sensor_param := Sensor{
@@ -415,15 +480,16 @@ func add_sys_sensor(repoId string) {
 		}
 		var s []Sensor
 		data := append(s, sensor_param)
+		fmt.Println("data--->", sensor_param)
 
 		bytea, err := json.Marshal(data)
 
 		if err != nil {
-
+			fmt.Println("Marshal,err===>>", err)
 		}
 		result, err := httpDo(url, "POST", bytea)
 		if err != nil {
-
+			fmt.Println("err*******-->", err)
 		}
 
 		fmt.Println(result)
