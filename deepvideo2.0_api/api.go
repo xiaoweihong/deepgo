@@ -83,6 +83,8 @@ type Task struct {
 	TypeId          int64
 	DetectTypeIds   []int
 	AdditionalInfos map[string]string
+	RuleSwitcher    bool
+	FramingStrategy int64
 }
 
 type CommonQuery struct {
@@ -187,7 +189,7 @@ func main() {
 func getRepoInfo() {
 	fmt.Println(strings.Repeat("******", 10))
 	fmt.Println("repoInfo below:")
-	url := fmt.Sprintf("http://%s:%d/api/biz/repos/tree?WithSensor=true&WithSource=true&LimitLevel=1&UniqueRepoId=%s&SourceTypes=3&WithTypeReg=&timestamp=1550197932129", *ip, *port, "root")
+	url := fmt.Sprintf("http://%s:%d/api/biz/repos/tree?WithSensor=true&WithSource=true&LimitLlsevel=1&UniqueRepoId=%s&SourceTypes=3&WithTypeReg=&timestamp=1550197932129", *ip, *port, "root")
 	result, err := httpDo(url, "GET", []byte(""))
 	if err != nil {
 
@@ -366,14 +368,15 @@ func add_kse_task(sourceList []string) {
 			UniqueSourceId:  v,
 			TypeId:          3,
 			DetectTypeIds:   []int{2011, 2012, 2013, 2015},
-			AdditionalInfos: map[string]string{"kse": "true"},
+			RuleSwitcher:    true,
+			FramingStrategy: 2,
+			//AdditionalInfos: map[string]string{"kse": "true"},
 		}
 		sensors := append(s, taskParam)
 		bytes, err := json.Marshal(sensors)
 		if err != nil {
 			fmt.Println(err)
 		}
-		//fmt.Println(string(bytes))
 		result, err := httpDo(url, "POST", bytes)
 		if err != nil {
 
