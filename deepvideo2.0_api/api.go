@@ -98,6 +98,17 @@ type SensorSource struct {
 	SourceTypes  []int
 }
 
+type Tsource struct {
+	Type int64
+	Uri  string
+}
+
+type VideoQuery struct {
+	Type    int64
+	Sources []Tsource
+	Sensor  Sensor
+}
+
 type TreeData struct {
 	Id           int64
 	RepoId       int64
@@ -126,8 +137,19 @@ var (
 	ip      = flag.String("ip", "127.0.0.1", "deepvideo ip")
 	port    = flag.Int("port", 8899, "deepvideo port")
 	file    = flag.String("file", "rtsp.txt", "file path about rtsp list")
-	command = flag.String("c", "", "command about api.(getSourceList,add_sys_sensor,get_task_list del_all_task add_vehicle_task add_face_task add_kse_task)")
-	repoId  = flag.String("repoId", "", "add task need repoId")
+	command = flag.String("c", "", `command about api.
+[
+getSourceList 		 -ip 127.0.0.1 -repoId xxxx-xxxx-xxxx-xxxx
+add_sys_sensor_rtsp	 -ip 127.0.0.1 -repoId xxxx-xxxx-xxxx-xxxx -file rtsp.txt
+add_sys_sensor_video	 -ip 127.0.0.1 -repoId xxxx-xxxx-xxxx-xxxx -file rtsp.txt
+get_task_list		 -ip 127.0.0.1 -c get_task_list
+del_all_task		 -ip 127.0.0.1 -c del_all_task
+add_vehicle_task	 -ip 127.0.0.1 -repoId xxxx-xxxx-xxxx-xxxx
+add_face_task		 -ip 127.0.0.1 -repoId xxxx-xxxx-xxxx-xxxx
+add_kse_task		 -ip 127.0.0.1 -repoId xxxx-xxxx-xxxx-xxxx
+]
+`)
+	repoId = flag.String("repoId", "", "add task need repoId")
 )
 
 func init() {
@@ -168,18 +190,23 @@ func main() {
 		add_kse_task(getSourceByUniqueRepoId(*repoId))
 	case "del_all_task":
 		del_all_task()
-	case "add_sys_sensor":
+	case "add_sys_sensor_rtsp":
 		if *repoId == "" {
 			printUsageErrorAndExit("no -repoId specified.add task need repoId,should not empty")
 		}
-		add_sys_sensor(*repoId)
+		add_sys_sensor_rtsp(*repoId)
 	case "getTaskByType":
 		getTaskByType("vehicle")
 	case "getSourceList":
 		if *repoId == "" {
-			printUsageErrorAndExit("no -repoId specified.add task need repoId,should not empty")
+			printUsageErrorAndExit("no -repoId specified.getSourceList need repoId,should not empty")
 		}
 		getSourceList(*repoId)
+	case "add_sys_sensor_video":
+		if *repoId == "" {
+			printUsageErrorAndExit("no -repoId specified.add_sys_sensor_video need repoId,should not empty")
+		}
+		add_sys_sensor_video(*repoId)
 	default:
 		getRepoInfo()
 	}
@@ -196,7 +223,10 @@ func getRepoInfo() {
 	}
 	var sourceTreeData SourceTreeData
 
-	json.Unmarshal([]byte(result), &sourceTreeData)
+	err = json.Unmarshal([]byte(result), &sourceTreeData)
+	if err != nil {
+
+	}
 	rootRepo := Repo{
 		UniqueRepoId: "root",
 		SensorCount:  sourceTreeData.Data.SensorCount,
@@ -458,7 +488,7 @@ func import_file(stream_file string) (res []string, err error) {
 	return
 }
 
-func add_sys_sensor(repoId string) {
+func add_sys_sensor_rtsp(repoId string) {
 	url := fmt.Sprintf("http://%s:%d/api/biz/sensors", *ip, *port)
 	fmt.Println(url)
 	url_list, _ := import_file(*file)
@@ -495,6 +525,56 @@ func add_sys_sensor(repoId string) {
 			fmt.Println("err*******-->", err)
 		}
 
+		fmt.Println(result)
+	}
+}
+
+func add_sys_sensor_video(repoId string) {
+	url := fmt.Sprintf("http://%s:%d/api/biz/sensors/videos", *ip, *port)
+	fmt.Println(url)
+	url_list, _ := import_file(*file)
+	count := 0
+	for _, sensor := range url_list {
+		videoName := "video-" + strconv.Itoa(count)
+		tmp := strings.Fields(sensor)
+		//linux上有问题，mac上没有，多个[]
+		if len(tmp) == 0 {
+			continue
+		}
+		//fmt.Println("tmp----->>>>>",len(tmp))
+		//latitude, _ := strconv.ParseFloat(tmp[2], 32)
+		//longitude, _ := strconv.ParseFloat(tmp[3], 32)
+		sensor_param := Sensor{
+			SensorName: videoName,
+			//Url:          tmp[1],
+			Latitude:     0,
+			Longitude:    0,
+			SensorType:   3,
+			UniqueRepoId: repoId,
+		}
+		video_param := VideoQuery{
+			Type: 2,
+			Sources: []Tsource{
+				{Type: 2, Uri: tmp[1]},
+			},
+			Sensor: sensor_param,
+		}
+		//fmt.Println(video_param)
+
+		var s []VideoQuery
+		data := append(s, video_param)
+		fmt.Println("data--->", video_param)
+
+		bytea, err := json.Marshal(data[0])
+		fmt.Println(string(bytea))
+		if err != nil {
+			fmt.Println("Marshal,err===>>", err)
+		}
+		result, err := httpDo(url, "POST", bytea)
+		if err != nil {
+			fmt.Println("err*******-->", err)
+		}
+		count++
 		fmt.Println(result)
 	}
 }
