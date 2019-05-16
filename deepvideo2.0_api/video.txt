@@ -1,0 +1,10 @@
+vehicle1 /data/bigtoe/upload-videos/vehicle1
+vehicle2 /data/bigtoe/upload-videos/vehicle2
+vehicle3 /data/bigtoe/upload-videos/vehicle3
+vehicle4 /data/bigtoe/upload-videos/vehicle4
+vehicle5 /data/bigtoe/upload-videos/vehicle5
+vehicle6 /data/bigtoe/upload-videos/vehicle6
+vehicle7 /data/bigtoe/upload-videos/vehicle7
+vehicle8 /data/bigtoe/upload-videos/vehicle8
+vehicle9 /data/bigtoe/upload-videos/vehicle9
+vehicle10 /data/bigtoe/upload-videosvehicle10

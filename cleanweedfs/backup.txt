@@ -1,0 +1,151 @@
+package main
+
+import (
+	"database/sql"
+	"deepgo/cleanweedfs/tools"
+	"fmt"
+	_ "github.com/lib/pq"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strings"
+)
+
+type Image struct {
+	ImageUrl    string
+	CutboardUri string
+}
+
+var (
+	connStr = "postgres://postgres:123456@192.168.2.25:15432/deepdata_dt?sslmode=disable"
+	db, _   = sql.Open("postgres", connStr)
+	closing = make(chan string)
+
+)
+
+func init() {
+
+}
+
+func converToUrl(url string)( resultUrl string)  {
+	resultUrl=strings.Replace(url,"8501/api/file","9333",-1)
+	return
+}
+
+func httpDo(url string, methodType string, param []byte) (result string, err error) {
+	client := &http.Client{}
+	request, err := http.NewRequest(methodType, url, strings.NewReader(string(param)))
+	if err != nil {
+		return
+	}
+	response, err := client.Do(request)
+
+	fmt.Println(response.StatusCode)
+	if err != nil {
+		fmt.Println("http do err", err)
+		return
+	}
+	defer response.Body.Close()
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		fmt.Println("--------->", err)
+		return
+	}
+	result = string(body)
+
+	return
+
+}
+
+func saveImageByType(objectType string,startTimeTs int,endTimeTs int)  {
+	image := Image{}
+	tools.ConnectRedis("192.168.2.189:6379")
+	rows, err := db.Query("select image_uri,cutboard_image_uri  from "+objectType+" where ts > $1 AND ts < $2", startTimeTs, endTimeTs)
+	fmt.Printf("select image_uri,cutboard_image_uri  from "+objectType+" where ts > %d AND ts < %d \n", startTimeTs, endTimeTs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for rows.Next() {
+		err := rows.Scan(&image.ImageUrl,&image.CutboardUri)
+		if err != nil {
+			panic(err)
+		}
+		imageUrl:=converToUrl(image.ImageUrl)
+		cutBoardUrl:=converToUrl(image.CutboardUri)
+		fmt.Println(imageUrl,"<---->",cutBoardUrl)
+		//fmt.Println(image.ImageUrl)
+		if ! tools.IsVisit(imageUrl) {
+			tools.AddToSet(imageUrl)
+		}
+		if ! tools.IsVisit(cutBoardUrl) {
+			tools.AddToSet(cutBoardUrl)
+		}
+	}
+
+	//deleteRecord(startTimeTs,endTimeTs)
+
+}
+
+func saveImageUrlList(startTimeTs int, endTimeTs int) {
+
+	saveImageByType("vehicles",startTimeTs,endTimeTs)
+
+}
+
+func deleteRecordByType(objectType string,startTimeTs int,endTimeTs int)  {
+	stmt, err := db.Prepare("delete from "+objectType+" where ts > $1 and ts < $2")
+	if err != nil {
+		panic(err)
+	}
+	result, err := stmt.Exec(startTimeTs, endTimeTs)
+	resultNum,_:=result.RowsAffected()
+	if err != nil {
+		panic(err)
+	}else if resultNum == 0{
+		fmt.Println("record is empty")
+	}else{
+		fmt.Println("delete successful")
+	}
+}
+
+func deleteImage()  {
+	tools.ConnectRedis("192.168.2.189:6379")
+	for{
+		length:=tools.GetQueueLength()
+		if length ==0{
+			break
+		}
+		url:=tools.PopfromQueue()
+		resp, err := http.Head(url)
+		if err != nil {
+
+		}
+		resultUrl:=resp.Request.URL.String()
+		fmt.Println(resultUrl)
+
+		result, err := httpDo(resultUrl, "DELETE", []byte(""))
+		if err != nil {
+
+		}
+		fmt.Println(result)
+	}
+}
+
+func main() {
+	startTimeTs := 0
+	endTimeTs := 9999999999999
+	saveImageUrlList(startTimeTs,endTimeTs)
+
+	//go func() {
+	//	signals := make(chan os.Signal, 1)
+	//	signal.Notify(signals, os.Kill, os.Interrupt)
+	//	<-signals
+	//	close(closing)
+	//}()
+	//go deleteImage()
+
+	//go deleteImage()
+	//go deleteRecordByType("vehicles",startTimeTs,endTimeTs)
+	//time.Sleep(time.Second*4)
+}

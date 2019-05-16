@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>软件中心</title>
+    <link rel="stylesheet" href="/static/js/bootstrap-table.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/js/bootstrap.min.css" crossorigin="anonymous">
+    <script src="/static/js/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+    <script src="/static/js/bootstrap-table.min.js"></script>
+</head>
+<body>
+
+<table
+        id="table"
+        data-toggle="table"
+        data-search="true"
+        data-search-align="left"
+        data-url="http://192.168.2.189:8000/api/v1/software">
+    <thead>
+    <tr>
+        <th data-field="id" data-align="center" data-width="10%">ID</th>
+        <th data-field="name" data-align="left" data-width="40%">名称</th>
+        <th data-field="url" data-align="center" data-width="40%">下载</th>
+    </tr>
+    </thead>
+</table>
+
+</body>
+</html>

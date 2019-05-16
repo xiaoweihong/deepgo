@@ -24,6 +24,7 @@ type ResonseData struct {
 	SensorName     string
 	Status         int64
 	UniqueTaskId   string
+	Source         Source
 }
 type Result struct {
 	Resp
@@ -381,7 +382,7 @@ func get_task_list() (uniqueTaskIdList []string, err error) {
 	fmt.Println("taskID", "\t", "SensorName", "\t", "Status", "\t", "rtsp")
 	for i := 0; i < len(result.Data); i++ {
 		tmp := result.Data[i]
-		fmt.Printf("%-d\t\t %-7s\t\t %-d\t\t\t%-s\n", tmp.TaskId, tmp.SensorName, tmp.Status, tmp.RenderUri)
+		fmt.Printf("%-d\t\t %-7s\t\t %-d\t\t\t%-s\n", tmp.TaskId, tmp.SensorName, tmp.Status, tmp.SourceData.Uri)
 		uniqueTaskIdList = append(uniqueTaskIdList, tmp.UniqueTaskId)
 	}
 	fmt.Println(strings.Repeat("******", 10))
@@ -501,8 +502,8 @@ func add_sys_sensor_rtsp(repoId string) {
 			continue
 		}
 		//fmt.Println("tmp----->>>>>",len(tmp))
-		latitude, _ := strconv.ParseFloat(tmp[2], 32)
-		longitude, _ := strconv.ParseFloat(tmp[3], 32)
+		latitude, _ := strconv.ParseFloat(tmp[3], 32)
+		longitude, _ := strconv.ParseFloat(tmp[2], 32)
 		sensor_param := Sensor{
 			SensorName:   tmp[0],
 			Url:          tmp[1],

@@ -1,0 +1,22 @@
+{
+  "cache": {
+    "redis": {
+      "addr": "192.168.2.189:6379"
+    }
+  },
+  "database": {
+    "postgres": {
+      "Addr": "192.168.2.28",
+      "Port": "5432",
+      "DbUser": "postgres",
+      "DbPasswd": "123456",
+      "DataBase": "deepdata_dt"
+    }
+  },
+  "timerange": {
+    "range": {
+      "StartTimeTs": 0,
+      "EndTimeTs": 1577777
+    }
+  }
+}
